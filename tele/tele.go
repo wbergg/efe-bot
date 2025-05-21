@@ -5,6 +5,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/wbergg/efe-bot/sbfetch"
@@ -14,6 +16,13 @@ import (
 
 func Run(cfg string, debugTelegram bool, debugStdout bool, telegramTest bool) error {
 
+	// Ratelimit variables
+	var (
+		sbfetchMutex   sync.Mutex
+		lastFetchTime  time.Time
+		rateLimitDelay = 5 * time.Second
+	)
+
 	// Load config
 	config, err := config.LoadConfig(cfg)
 	if err != nil {
@@ -21,6 +30,7 @@ func Run(cfg string, debugTelegram bool, debugStdout bool, telegramTest bool) er
 		panic("Could not load config, check config/config.json")
 	}
 
+	// TG channel
 	channel, err := strconv.ParseInt(config.Telegram.TgChannel, 10, 64)
 	if err != nil {
 		log.Error(err)
@@ -31,6 +41,7 @@ func Run(cfg string, debugTelegram bool, debugStdout bool, telegramTest bool) er
 	tg := telegram.New(config.Telegram.TgAPIKey, channel, debugTelegram, debugStdout)
 	tg.Init(debugTelegram)
 
+	// TG test
 	if telegramTest {
 		tg.SendM("DEBUG: efebot test message")
 		os.Exit(0)
@@ -72,13 +83,27 @@ func Run(cfg string, debugTelegram bool, debugStdout bool, telegramTest bool) er
 					}
 				}
 
-				// Replace and send
+				// Lock
+				sbfetchMutex.Lock()
+				now := time.Now()
+				if now.Sub(lastFetchTime) < rateLimitDelay {
+					sbfetchMutex.Unlock()
+					tg.SendTo(update.Message.Chat.ID, "Please wait before trying again.")
+					break
+				}
+				lastFetchTime = now
+				sbfetchMutex.Unlock()
+
+				// API get
 				reply, err := sbfetch.Get(cfg, message)
 				if err != nil {
 					panic(err)
 				}
+
+				// Parse reply
 				tgreply := tgMessageParser(message, reply)
 
+				// Send message
 				tg.SendTo(update.Message.Chat.ID, tgreply)
 
 			case "help":
@@ -108,16 +133,17 @@ func tgMessageParser(message string, input []sbfetch.Result) string {
 
 	for _, r := range input {
 		if strings.HasPrefix(strings.ToLower(r.NameBold), strings.ToLower(message)) {
-			// Generate deduplication key
+			// Dupliceate check
 			key := r.NameBold
 			if r.NameThin != "" {
 				key += r.NameThin
 			}
 
-			// Skip if already posted
+			// Stop loop if posted
 			if posted[key] {
 				continue
 			}
+
 			posted[key] = true
 
 			if r.NameThin != "" {
