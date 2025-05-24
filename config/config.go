@@ -15,9 +15,14 @@ type SystembolagetAPI struct {
 	Ocp_apim_subscription_key string `json:"ocp_apim_subscription_key"`
 }
 
+type BordershopAPI struct {
+	Url string `json:"url"`
+}
+
 type Config struct {
 	Telegram TelegramConfig   `json:"Telegram"`
 	SBAPI    SystembolagetAPI `json:"SBAPI"`
+	BSAPI    BordershopAPI    `json:"BSAPI"`
 }
 
 var Loaded Config

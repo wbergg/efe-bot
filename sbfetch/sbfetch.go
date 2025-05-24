@@ -212,8 +212,8 @@ func Get(cfg string, search_string string) ([]Result, error) {
 	search.Set("textQuery", search_string)
 
 	fullUrl := fmt.Sprintf("%s?%s", urlstr, search.Encode())
-	fmt.Println(fullUrl)
-	// Try fetch
+
+	// Fetch
 	req, err := http.NewRequest("GET", fullUrl, nil)
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36")
@@ -232,7 +232,6 @@ func Get(cfg string, search_string string) ([]Result, error) {
 		log.Error("Error sending request:", err)
 		return []Result{}, err
 	}
-	fmt.Println(resp)
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
@@ -241,12 +240,14 @@ func Get(cfg string, search_string string) ([]Result, error) {
 		return []Result{}, err
 	}
 
+	// Unmarshal
 	var response SBAPIResponse
 	if err := json.Unmarshal(body, &response); err != nil {
 		log.Error("Error unmarshalling JSON:", err)
 		return []Result{}, err
 	}
 
+	// Save to slice
 	var results []Result
 	for _, product := range response.Products {
 		result := Result{

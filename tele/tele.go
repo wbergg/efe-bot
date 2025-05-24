@@ -9,7 +9,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/wbergg/efe-bot/sbfetch"
+	"github.com/wbergg/efe-bot/bsfetch"
 	"github.com/wbergg/insultbot/config"
 	"github.com/wbergg/telegram"
 )
@@ -17,11 +17,9 @@ import (
 func Run(cfg string, debugTelegram bool, debugStdout bool, telegramTest bool) error {
 
 	// Ratelimit variables
-	var (
-		sbfetchMutex   sync.Mutex
-		lastFetchTime  time.Time
-		rateLimitDelay = 5 * time.Second
-	)
+	var sbfetchMutex sync.Mutex
+	var lastFetchTime time.Time
+	var rateLimitDelay = 5 * time.Second
 
 	// Load config
 	config, err := config.LoadConfig(cfg)
@@ -85,17 +83,24 @@ func Run(cfg string, debugTelegram bool, debugStdout bool, telegramTest bool) er
 
 				// Lock
 				sbfetchMutex.Lock()
-				now := time.Now()
-				if now.Sub(lastFetchTime) < rateLimitDelay {
+				time_now := time.Now()
+				if time_now.Sub(lastFetchTime) < rateLimitDelay {
 					sbfetchMutex.Unlock()
-					tg.SendTo(update.Message.Chat.ID, "Please wait before trying again.")
+					tg.SendTo(update.Message.Chat.ID, "Throttled - Please wait before trying again.")
 					break
 				}
-				lastFetchTime = now
+				lastFetchTime = time_now
+				// Unlock
 				sbfetchMutex.Unlock()
 
-				// API get
-				reply, err := sbfetch.Get(cfg, message)
+				// API get from SB
+				//reply, err := sbfetch.Get(cfg, message)
+				//if err != nil {
+				//	panic(err)
+				//}
+
+				// API get from BS
+				reply, err := bsfetch.Get(cfg, message)
 				if err != nil {
 					panic(err)
 				}
@@ -107,6 +112,7 @@ func Run(cfg string, debugTelegram bool, debugStdout bool, telegramTest bool) er
 				tg.SendTo(update.Message.Chat.ID, tgreply)
 
 			case "help":
+				// Help message
 				helpm := `EFEBOT 1.0 - Used to check whether a beer is EFE APPROVED.
 
 				/efe <beer name>
@@ -126,7 +132,7 @@ func Run(cfg string, debugTelegram bool, debugStdout bool, telegramTest bool) er
 	return err
 }
 
-func tgMessageParser(message string, input []sbfetch.Result) string {
+func tgMessageParser(message string, input []bsfetch.Result) string {
 	var tgreply string
 
 	posted := make(map[string]bool)
