@@ -141,7 +141,12 @@ func Get(cfg string, search_string string) ([]Result, error) {
 	// Save to slice
 	var results []Result
 	for _, product := range response.Products {
-		percent := GetPercent(product.DisplayName)
+		percent, err := GetPercent(product.DisplayName)
+		if err != nil {
+			// Log the error and skip this product
+			log.Warnf("Skipping product due to parse error: %v", err)
+			continue
+		}
 		result := Result{
 			NameBold: product.DisplayName,
 			NameThin: "",
@@ -154,12 +159,23 @@ func Get(cfg string, search_string string) ([]Result, error) {
 	return results, nil
 }
 
-func GetPercent(input string) float64 {
+func GetPercent(input string) (float64, error) {
 	re := regexp.MustCompile(`\s[0-9],[0-9]%`)
 	match := re.FindString(input)
+
+	// If no match found, return error
+	if match == "" {
+		return 0, fmt.Errorf("no alcohol percentage found in product name: %s", input)
+	}
+
 	s := strings.Replace(match, ",", ".", 1)
 	s2 := strings.Replace(s, "%", "", 1)
 	s3 := strings.Replace(s2, " ", "", 1)
-	s4, _ := strconv.ParseFloat(s3, 64)
-	return s4
+
+	s4, err := strconv.ParseFloat(s3, 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse alcohol percentage '%s': %w", s3, err)
+	}
+
+	return s4, nil
 }
