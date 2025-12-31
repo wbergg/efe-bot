@@ -24,15 +24,13 @@ func Run(cfg string, debugTelegram bool, debugStdout bool, telegramTest bool) er
 	// Load config
 	config, err := config.LoadConfig(cfg)
 	if err != nil {
-		log.Error(err)
-		panic("Could not load config, check config/config.json")
+		return fmt.Errorf("could not load config: %w", err)
 	}
 
 	// TG channel
 	channel, err := strconv.ParseInt(config.Telegram.TgChannel, 10, 64)
 	if err != nil {
-		log.Error(err)
-		panic("Could not convert Telegram channel to int64")
+		return fmt.Errorf("could not convert Telegram channel to int64: %w", err)
 	}
 
 	// Initiate telegram
@@ -48,8 +46,7 @@ func Run(cfg string, debugTelegram bool, debugStdout bool, telegramTest bool) er
 	// Read messages from Telegram
 	updates, err := tg.ReadM()
 	if err != nil {
-		log.Error(err)
-		panic("Cant read from Telegram")
+		return fmt.Errorf("cant read from Telegram: %w", err)
 	}
 
 	// Loop
@@ -102,7 +99,9 @@ func Run(cfg string, debugTelegram bool, debugStdout bool, telegramTest bool) er
 				// API get from BS
 				reply, err := bsfetch.Get(cfg, message)
 				if err != nil {
-					panic(err)
+					log.Error("Error fetching beer data: ", err)
+					tg.SendTo(update.Message.Chat.ID, "Sorry, there was an error searching for that beer. Please try again later.")
+					break
 				}
 
 				// Parse reply

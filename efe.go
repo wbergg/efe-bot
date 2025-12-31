@@ -20,8 +20,7 @@ func main() {
 	// Load config
 	config, err := config.LoadConfig(*configFile)
 	if err != nil {
-		log.Error(err)
-		panic("Could not load config, check config/config.json")
+		log.Fatal("Could not load config, check config/config.json: ", err)
 	}
 	// DEBUG
 	fmt.Println(*debugStdout, *debugTelegram, *telegramTest, config)

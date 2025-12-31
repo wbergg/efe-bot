@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/wbergg/efe-bot/config"
@@ -198,8 +199,7 @@ func Get(cfg string, search_string string) ([]Result, error) {
 	// Load config
 	config, err := config.LoadConfig(cfg)
 	if err != nil {
-		log.Error(err)
-		panic("Could not load config, check config/config.json")
+		return []Result{}, fmt.Errorf("could not load config: %w", err)
 	}
 
 	// Search and url
@@ -226,7 +226,9 @@ func Get(cfg string, search_string string) ([]Result, error) {
 	}
 
 	// Client shit
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Error("Error sending request:", err)
