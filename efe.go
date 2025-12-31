@@ -26,7 +26,6 @@ func main() {
 	fmt.Println(*debugStdout, *debugTelegram, *telegramTest, config)
 
 	// Run
-	//sbfetch.Run(*configFile, *debugTelegram, *debugStdout, *telegramTest)
 	tele.Run(*configFile, *debugTelegram, *debugStdout, *telegramTest)
 
 }

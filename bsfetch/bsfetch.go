@@ -101,7 +101,6 @@ func Get(cfg string, search_string string) ([]Result, error) {
 	search.Set("term", search_string)
 
 	fullUrl := fmt.Sprintf("%s%s", urlstr, search.Encode())
-	fmt.Println(fullUrl)
 
 	// Fetch
 	req, err := http.NewRequest("GET", fullUrl, nil)
@@ -160,7 +159,8 @@ func Get(cfg string, search_string string) ([]Result, error) {
 }
 
 func GetPercent(input string) (float64, error) {
-	re := regexp.MustCompile(`\s[0-9],[0-9]%`)
+	// Match patterns
+	re := regexp.MustCompile(`\d+[,.]?\d*%`)
 	match := re.FindString(input)
 
 	// If no match found, return error
@@ -168,14 +168,14 @@ func GetPercent(input string) (float64, error) {
 		return 0, fmt.Errorf("no alcohol percentage found in product name: %s", input)
 	}
 
-	s := strings.Replace(match, ",", ".", 1)
-	s2 := strings.Replace(s, "%", "", 1)
-	s3 := strings.Replace(s2, " ", "", 1)
+	// Remove % replace , with . for parsing
+	s := strings.TrimSuffix(match, "%")
+	s = strings.Replace(s, ",", ".", 1)
 
-	s4, err := strconv.ParseFloat(s3, 64)
+	percent, err := strconv.ParseFloat(s, 64)
 	if err != nil {
-		return 0, fmt.Errorf("failed to parse alcohol percentage '%s': %w", s3, err)
+		return 0, fmt.Errorf("failed to parse alcohol percentage '%s': %w", s, err)
 	}
 
-	return s4, nil
+	return percent, nil
 }

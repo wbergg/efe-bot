@@ -10,6 +10,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/wbergg/efe-bot/bsfetch"
+	"github.com/wbergg/efe-bot/sbfetch"
 	"github.com/wbergg/insultbot/config"
 	"github.com/wbergg/telegram"
 )
@@ -90,22 +91,40 @@ func Run(cfg string, debugTelegram bool, debugStdout bool, telegramTest bool) er
 				// Unlock
 				sbfetchMutex.Unlock()
 
-				// API get from SB
-				//reply, err := sbfetch.Get(cfg, message)
-				//if err != nil {
-				//	panic(err)
-				//}
-
-				// API get from BS
-				reply, err := bsfetch.Get(cfg, message)
+				// API get from SB (Systembolaget)
+				sbReply, err := sbfetch.Get(cfg, message)
 				if err != nil {
-					log.Error("Error fetching beer data: ", err)
-					tg.SendTo(update.Message.Chat.ID, "Sorry, there was an error searching for that beer. Please try again later.")
+					log.Error("Error fetching from Systembolaget: ", err)
+				}
+
+				// API get from BS (Bordershop)
+				bsReply, err := bsfetch.Get(cfg, message)
+				if err != nil {
+					log.Error("Error fetching from Bordershop: ", err)
+				}
+
+				// Combine results from both APIs
+				var combinedResults []sbfetch.Result
+				combinedResults = append(combinedResults, sbReply...)
+
+				// Convert bsfetch.Result to sbfetch.Result and append
+				for _, bsResult := range bsReply {
+					combinedResults = append(combinedResults, sbfetch.Result{
+						NameBold: bsResult.NameBold,
+						NameThin: bsResult.NameThin,
+						Percent:  bsResult.Percent,
+						Approved: bsResult.Approved,
+					})
+				}
+
+				// Check if we got any results at all
+				if len(combinedResults) == 0 {
+					tg.SendTo(update.Message.Chat.ID, "Sorry, no results found or there was an error searching. Please try again later.")
 					break
 				}
 
-				// Parse reply
-				tgreply := tgMessageParser(message, reply)
+				// Parse combined reply
+				tgreply := tgMessageParser(message, combinedResults)
 
 				// Send message
 				tg.SendTo(update.Message.Chat.ID, tgreply)
@@ -131,7 +150,7 @@ func Run(cfg string, debugTelegram bool, debugStdout bool, telegramTest bool) er
 	return err
 }
 
-func tgMessageParser(message string, input []bsfetch.Result) string {
+func tgMessageParser(message string, input []sbfetch.Result) string {
 	var tgreply string
 
 	posted := make(map[string]bool)
@@ -151,17 +170,40 @@ func tgMessageParser(message string, input []bsfetch.Result) string {
 
 			posted[key] = true
 
+			// Check if NameBold already contains percentage (from bordershop)
+			hasPercent := strings.Contains(r.NameBold, "%")
+
 			if r.NameThin != "" {
-				if r.Approved {
-					tgreply = fmt.Sprintf(tgreply+"\xE2\x9C\x85"+" %s %s, %.1f\n", r.NameBold, r.NameThin, r.Percent)
+				if hasPercent {
+					// Bordershop format: name already includes percentage
+					if r.Approved {
+						tgreply += fmt.Sprintf("\xE2\x9C\x85"+" %s %s (source Bordershop)\n", r.NameBold, r.NameThin)
+					} else {
+						tgreply += fmt.Sprintf("\xE2\x9D\x8C"+" %s %s (source Bordershop)\n", r.NameBold, r.NameThin)
+					}
 				} else {
-					tgreply = fmt.Sprintf(tgreply+"\xE2\x9D\x8C"+" %s %s, %.1f\n", r.NameBold, r.NameThin, r.Percent)
+					// Systembolaget format: need to append percentage
+					if r.Approved {
+						tgreply += fmt.Sprintf("\xE2\x9C\x85"+" %s %s %.1f%% (source Systembolaget)\n", r.NameBold, r.NameThin, r.Percent)
+					} else {
+						tgreply += fmt.Sprintf("\xE2\x9D\x8C"+" %s %s %.1f%% (source Systembolaget)\n", r.NameBold, r.NameThin, r.Percent)
+					}
 				}
 			} else {
-				if r.Approved {
-					tgreply = fmt.Sprintf(tgreply+"\xE2\x9C\x85"+" %s, %.1f\n", r.NameBold, r.Percent)
+				if hasPercent {
+					// Bordershop format: name already includes percentage
+					if r.Approved {
+						tgreply += fmt.Sprintf("\xE2\x9C\x85"+" %s (source Bordershop)\n", r.NameBold)
+					} else {
+						tgreply += fmt.Sprintf("\xE2\x9D\x8C"+" %s (source Bordershop)\n", r.NameBold)
+					}
 				} else {
-					tgreply = fmt.Sprintf(tgreply+"\xE2\x9D\x8C"+" %s, %.1f\n", r.NameBold, r.Percent)
+					// Systembolaget format: need to append percentage
+					if r.Approved {
+						tgreply += fmt.Sprintf("\xE2\x9C\x85"+" %s %.1f%% (source Systembolaget)\n", r.NameBold, r.Percent)
+					} else {
+						tgreply += fmt.Sprintf("\xE2\x9D\x8C"+" %s %.1f%% (source Systembolaget)\n", r.NameBold, r.Percent)
+					}
 				}
 			}
 
