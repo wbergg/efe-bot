@@ -156,7 +156,7 @@ func tgMessageParser(message string, input []sbfetch.Result) string {
 	posted := make(map[string]bool)
 
 	for _, r := range input {
-		if strings.HasPrefix(strings.ToLower(r.NameBold), strings.ToLower(message)) {
+		if strings.Contains(strings.ToLower(r.NameBold), strings.ToLower(message)) {
 			// Dupliceate check
 			key := r.NameBold
 			if r.NameThin != "" {
