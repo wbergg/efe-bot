@@ -182,41 +182,27 @@ func tgMessageParser(message string, input []sbfetch.Result) string {
 
 			posted[key] = true
 
-			// Check if NameBold already contains percentage (from bordershop)
-			hasPercent := strings.Contains(r.NameBold, "%")
+			// Choose emoji
+			emoji := "\xE2\x9D\x8C" // ❌
+			if r.Approved {
+				emoji = "\xE2\x9C\x85" // ✅
+			}
 
-			if r.NameThin != "" {
-				if hasPercent {
-					// Bordershop format: name already includes percentage
-					if r.Approved {
-						tgreply += fmt.Sprintf("\xE2\x9C\x85"+" %s %s (source Bordershop)\n", r.NameBold, r.NameThin)
-					} else {
-						tgreply += fmt.Sprintf("\xE2\x9D\x8C"+" %s %s (source Bordershop)\n", r.NameBold, r.NameThin)
-					}
-				} else {
-					// Systembolaget format: need to append percentage
-					if r.Approved {
-						tgreply += fmt.Sprintf("\xE2\x9C\x85"+" %s %s %.1f%% (source Systembolaget)\n", r.NameBold, r.NameThin, r.Percent)
-					} else {
-						tgreply += fmt.Sprintf("\xE2\x9D\x8C"+" %s %s %.1f%% (source Systembolaget)\n", r.NameBold, r.NameThin, r.Percent)
-					}
-				}
+			// Choose source and percent suffix
+			hasPercent := strings.Contains(r.NameBold, "%")
+			var source, pctStr string
+			if hasPercent {
+				source = "Bordershop"
 			} else {
-				if hasPercent {
-					// Bordershop format: name already includes percentage
-					if r.Approved {
-						tgreply += fmt.Sprintf("\xE2\x9C\x85"+" %s (source Bordershop)\n", r.NameBold)
-					} else {
-						tgreply += fmt.Sprintf("\xE2\x9D\x8C"+" %s (source Bordershop)\n", r.NameBold)
-					}
-				} else {
-					// Systembolaget format: need to append percentage
-					if r.Approved {
-						tgreply += fmt.Sprintf("\xE2\x9C\x85"+" %s %.1f%% (source Systembolaget)\n", r.NameBold, r.Percent)
-					} else {
-						tgreply += fmt.Sprintf("\xE2\x9D\x8C"+" %s %.1f%% (source Systembolaget)\n", r.NameBold, r.Percent)
-					}
-				}
+				source = "Systembolaget"
+				pctStr = fmt.Sprintf(" %.1f%%", r.Percent)
+			}
+
+			// Build line
+			if r.NameThin != "" {
+				tgreply += fmt.Sprintf("%s %s %s%s (source %s)\n", emoji, r.NameBold, r.NameThin, pctStr, source)
+			} else {
+				tgreply += fmt.Sprintf("%s %s%s (source %s)\n", emoji, r.NameBold, pctStr, source)
 			}
 
 		}

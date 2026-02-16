@@ -116,7 +116,6 @@ func Get(config config.Config, search_string string) ([]Result, error) {
 		log.Error("Error sending request:", err)
 		return []Result{}, err
 	}
-	fmt.Println(resp)
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
