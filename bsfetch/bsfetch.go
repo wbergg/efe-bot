@@ -78,6 +78,8 @@ type BSAPIResponse struct {
 	IsEmpty         bool          `json:"isEmpty"`
 }
 
+var percentRegex = regexp.MustCompile(`\s([0-9]+(?:[,.][0-9]+)?)\s*%`)
+
 type Result struct {
 	NameBold string
 	NameThin string
@@ -153,8 +155,7 @@ func Get(config config.Config, search_string string) ([]Result, error) {
 }
 
 func GetPercent(input string) (float64, error) {
-	re := regexp.MustCompile(`\s([0-9]+(?:[,.][0-9]+)?)\s*%`)
-	match := re.FindStringSubmatch(input)
+	match := percentRegex.FindStringSubmatch(input)
 
 	// If no match found, return error
 	if match == nil {
