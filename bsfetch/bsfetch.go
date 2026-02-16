@@ -159,18 +159,15 @@ func Get(cfg string, search_string string) ([]Result, error) {
 }
 
 func GetPercent(input string) (float64, error) {
-	// Match patterns
-	re := regexp.MustCompile(`\d+[,.]?\d*%`)
-	match := re.FindString(input)
+	re := regexp.MustCompile(`\s([0-9]+(?:[,.][0-9]+)?)\s*%`)
+	match := re.FindStringSubmatch(input)
 
 	// If no match found, return error
-	if match == "" {
+	if match == nil {
 		return 0, fmt.Errorf("no alcohol percentage found in product name: %s", input)
 	}
 
-	// Remove % replace , with . for parsing
-	s := strings.TrimSuffix(match, "%")
-	s = strings.Replace(s, ",", ".", 1)
+	s := strings.Replace(match[1], ",", ".", 1)
 
 	percent, err := strconv.ParseFloat(s, 64)
 	if err != nil {

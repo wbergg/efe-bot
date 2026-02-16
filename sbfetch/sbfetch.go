@@ -236,6 +236,12 @@ func Get(cfg string, search_string string) ([]Result, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		log.Errorf("SBAPI returned status %d: %s", resp.StatusCode, string(body))
+		return []Result{}, fmt.Errorf("SBAPI returned status %d", resp.StatusCode)
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Error("Error reading response:", err)

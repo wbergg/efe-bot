@@ -1,0 +1,13 @@
+{
+  "Telegram": {
+    "tgAPIkey": "xxx",
+    "tgChannel": "xxx"
+  },
+  "SBAPI": {
+    "url": "https://api-extern.systembolaget.se/sb-api-ecommerce/v1/productsearch/search",
+    "ocp_apim_subscription_key": "xxx"
+  },
+  "BSAPI": {
+    "url": "https://www.bordershop.com/se/bordershop/api/catalogsearchapi/typeahead/?pageSize=100&term="
+  }
+}
