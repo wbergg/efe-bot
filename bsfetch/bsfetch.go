@@ -89,14 +89,8 @@ type Result struct {
 
 func Get(config config.Config, search_string string) ([]Result, error) {
 
-	// Url
-	urlstr := config.BSAPI.Url
-
-	// Build URL with query parameters
-	search := url.Values{}
-	search.Set("term", search_string)
-
-	fullUrl := fmt.Sprintf("%s%s", urlstr, search.Encode())
+	// Build URL - config URL already includes ?pageSize=100&term=
+	fullUrl := config.BSAPI.Url + url.QueryEscape(search_string)
 
 	// Fetch
 	req, err := http.NewRequest("GET", fullUrl, nil)
