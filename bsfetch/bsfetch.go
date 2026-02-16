@@ -100,13 +100,12 @@ func Get(config config.Config, search_string string) ([]Result, error) {
 
 	// Fetch
 	req, err := http.NewRequest("GET", fullUrl, nil)
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36")
-
 	if err != nil {
-		log.Error("Error fetching data:", err)
+		log.Error("Error creating request:", err)
 		return []Result{}, err
 	}
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36")
 
 	// Client shit
 	client := &http.Client{
