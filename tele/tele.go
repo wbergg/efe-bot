@@ -91,16 +91,28 @@ func Run(cfg string, debugTelegram bool, debugStdout bool, telegramTest bool) er
 				// Unlock
 				sbfetchMutex.Unlock()
 
-				// API get from SB (Systembolaget)
-				sbReply, err := sbfetch.Get(cfg, message)
-				if err != nil {
-					log.Error("Error fetching from Systembolaget: ", err)
-				}
+				// Fetch from both APIs in parallel
+				var wg sync.WaitGroup
+				var sbReply []sbfetch.Result
+				var bsReply []bsfetch.Result
+				var sbErr, bsErr error
 
-				// API get from BS (Bordershop)
-				bsReply, err := bsfetch.Get(cfg, message)
-				if err != nil {
-					log.Error("Error fetching from Bordershop: ", err)
+				wg.Add(2)
+				go func() {
+					defer wg.Done()
+					sbReply, sbErr = sbfetch.Get(cfg, message)
+				}()
+				go func() {
+					defer wg.Done()
+					bsReply, bsErr = bsfetch.Get(cfg, message)
+				}()
+				wg.Wait()
+
+				if sbErr != nil {
+					log.Error("Error fetching from Systembolaget: ", sbErr)
+				}
+				if bsErr != nil {
+					log.Error("Error fetching from Bordershop: ", bsErr)
 				}
 
 				// Combine results from both APIs
