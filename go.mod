@@ -4,7 +4,6 @@ go 1.24.2
 
 require (
 	github.com/sirupsen/logrus v1.9.4
-	github.com/wbergg/insultbot v0.0.0-20250515183512-5aaa67d27afe
 	github.com/wbergg/telegram v0.0.2
 )
 

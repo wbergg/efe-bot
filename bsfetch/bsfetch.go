@@ -85,13 +85,7 @@ type Result struct {
 	Approved bool
 }
 
-func Get(cfg string, search_string string) ([]Result, error) {
-
-	// Load config
-	config, err := config.LoadConfig(cfg)
-	if err != nil {
-		return []Result{}, fmt.Errorf("could not load config: %w", err)
-	}
+func Get(config config.Config, search_string string) ([]Result, error) {
 
 	// Url
 	urlstr := config.BSAPI.Url

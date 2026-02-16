@@ -11,7 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/wbergg/efe-bot/bsfetch"
 	"github.com/wbergg/efe-bot/sbfetch"
-	"github.com/wbergg/insultbot/config"
+	"github.com/wbergg/efe-bot/config"
 	"github.com/wbergg/telegram"
 )
 
@@ -100,11 +100,11 @@ func Run(cfg string, debugTelegram bool, debugStdout bool, telegramTest bool) er
 				wg.Add(2)
 				go func() {
 					defer wg.Done()
-					sbReply, sbErr = sbfetch.Get(cfg, message)
+					sbReply, sbErr = sbfetch.Get(config, message)
 				}()
 				go func() {
 					defer wg.Done()
-					bsReply, bsErr = bsfetch.Get(cfg, message)
+					bsReply, bsErr = bsfetch.Get(config, message)
 				}()
 				wg.Wait()
 
