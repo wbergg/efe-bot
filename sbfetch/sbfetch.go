@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -248,9 +249,12 @@ func Get(config config.Config, search_string string) ([]Result, error) {
 		return []Result{}, err
 	}
 
-	// Save to slice
+	// Save to slice, only include beer products
 	var results []Result
 	for _, product := range response.Products {
+		if !strings.EqualFold(product.CategoryLevel1, "Öl") {
+			continue
+		}
 		result := Result{
 			NameBold: product.ProductNameBold,
 			NameThin: product.ProductNameThin,
@@ -258,7 +262,6 @@ func Get(config config.Config, search_string string) ([]Result, error) {
 			Approved: product.AlcoholPercentage >= 5,
 		}
 		results = append(results, result)
-		fmt.Println(product.ProductNameThin)
 	}
 
 	return results, nil
